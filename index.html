@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบคำนวณค่าใช้จ่ายประจำวัน/เดือน/ปี</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen pb-12">
+
+  <!-- Header -->
+  <header class="bg-indigo-600 text-white p-4 text-center shadow-md">
+    <h1 class="text-xl font-bold">💰 คำนวณค่าใช้จ่ายครอบครัว</h1>
+    <p class="text-xs text-indigo-200 mt-1">วางแผนและสรุปยอดค่าใช้จ่ายอย่างง่าย</p>
+  </header>
+
+  <div class="max-w-md mx-auto p-4 space-y-4">
+
+    <!-- Card: สรุปยอดรวม -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+      <h2 class="text-sm font-semibold text-slate-500 mb-3">ภาพรวมค่าใช้จ่ายทั้งหมด</h2>
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+          <p class="text-xs text-slate-500">ต่อวัน</p>
+          <p id="totalDay" class="text-sm font-bold text-slate-800 mt-1">0</p>
+        </div>
+        <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+          <p class="text-xs text-indigo-600 font-medium">ต่อเดือน</p>
+          <p id="totalMonth" class="text-base font-bold text-indigo-600 mt-1">0</p>
+        </div>
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+          <p class="text-xs text-slate-500">ต่อปี</p>
+          <p id="totalYear" class="text-sm font-bold text-slate-800 mt-1">0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form: เพิ่มรายการ -->
+    <form id="expenseForm" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
+      <h3 class="text-sm font-semibold text-slate-700">➕ เพิ่มรายการค่าใช้จ่าย</h3>
+      
+      <div>
+        <label class="block text-xs text-slate-500 mb-1">ชื่อรายการ</label>
+        <input type="text" id="title" required placeholder="เช่น ค่าอาหาร, ค่าเน็ต, ค่าน้ำมัน"
+          class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">จำนวนเงิน (บาท)</label>
+          <input type="number" id="amount" required min="1" step="any" placeholder="0.00"
+            class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">รอบการจ่าย</label>
+          <select id="frequency"
+            class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="daily">ต่อวัน</option>
+            <option value="monthly" selected>ต่อเดือน</option>
+            <option value="yearly">ต่อปี</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit"
+        class="w-full bg-indigo-600 text-white py-2.5 rounded-xl font-medium text-sm hover:bg-indigo-700 active:scale-[0.98] transition">
+        บันทึกรายการ
+      </button>
+    </form>
+
+    <!-- List: รายการค่าใช้จ่าย -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-sm font-semibold text-slate-700">รายการทั้งหมด</h3>
+        <button id="clearAll" class="text-xs text-red-500 hover:underline">ล้างทั้งหมด</button>
+      </div>
+
+      <ul id="itemList" class="divide-y divide-slate-100 text-sm">
+        <!-- รายการจะถูกแทรกที่นี่ด้วย JS -->
+      </ul>
+    </div>
+
+  </div>
+
+  <script>
+    let expenses = JSON.parse(localStorage.getItem('family_expenses')) || [];
+
+    const form = document.getElementById('expenseForm');
+    const itemList = document.getElementById('itemList');
+
+    function saveAndRender() {
+      localStorage.setItem('family_expenses', JSON.stringify(expenses));
+      renderList();
+      calculateTotals();
+    }
+
+    function renderList() {
+      itemList.innerHTML = '';
+      if (expenses.length === 0) {
+        itemList.innerHTML = `<li class="py-4 text-center text-xs text-slate-400">ยังไม่มีรายการค่าใช้จ่าย</li>`;
+        return;
+      }
+
+      expenses.forEach((item, index) => {
+        const freqText = item.frequency === 'daily' ? 'วัน' : item.frequency === 'monthly' ? 'เดือน' : 'ปี';
+        const li = document.createElement('li');
+        li.className = 'py-3 flex justify-between items-center';
+        li.innerHTML = `
+          <div>
+            <p class="font-medium text-slate-800">${item.title}</p>
+            <p class="text-xs text-slate-400">${Number(item.amount).toLocaleString()} บาท / ${freqText}</p>
+          </div>
+          <button onclick="deleteItem(${index})" class="text-slate-300 hover:text-red-500 text-lg px-2">✕</button>
+        `;
+        itemList.appendChild(li);
+      });
+    }
+
+    function calculateTotals() {
+      let totalMonthly = 0;
+
+      expenses.forEach(item => {
+        const amt = parseFloat(item.amount);
+        if (item.frequency === 'daily') totalMonthly += amt * 30;
+        else if (item.frequency === 'monthly') totalMonthly += amt;
+        else if (item.frequency === 'yearly') totalMonthly += amt / 12;
+      });
+
+      const totalDaily = totalMonthly / 30;
+      const totalYearly = totalMonthly * 12;
+
+      document.getElementById('totalDay').innerText = Math.round(totalDaily).toLocaleString();
+      document.getElementById('totalMonth').innerText = Math.round(totalMonthly).toLocaleString();
+      document.getElementById('totalYear').innerText = Math.round(totalYearly).toLocaleString();
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      const amount = document.getElementById('amount').value;
+      const frequency = document.getElementById('frequency').value;
+
+      expenses.push({ title, amount, frequency });
+      saveAndRender();
+
+      form.reset();
+    });
+
+    function deleteItem(index) {
+      expenses.splice(index, 1);
+      saveAndRender();
+    }
+
+    document.getElementById('clearAll').addEventListener('click', () => {
+      if (expenses.length > 0 && confirm('ต้องการลบรายการทั้งหมดหรือไม่?')) {
+        expenses = [];
+        saveAndRender();
+      }
+    });
+
+    // Initial Render
+    renderList();
+    calculateTotals();
+  </script>
+</body>
+</html>
