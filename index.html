@@ -3,55 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบคำนวณค่าใช้จ่ายประจำวัน/เดือน/ปี</title>
+  <title>คำนวณค่าใช้จ่ายครอบครัว</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   </style>
 </head>
-<body class="bg-slate-100 min-h-screen pb-12">
+<body class="bg-slate-100 min-h-screen pb-16">
 
-  <!-- Header -->
   <header class="bg-indigo-600 text-white p-4 text-center shadow-md">
     <h1 class="text-xl font-bold">💰 คำนวณค่าใช้จ่ายครอบครัว</h1>
-    <p class="text-xs text-indigo-200 mt-1">วางแผนและสรุปยอดค่าใช้จ่ายอย่างง่าย</p>
+    <p class="text-xs text-indigo-200 mt-1">เดือนนึงจ่ายเท่าไหร่ เหลือใช้เท่าไหร่</p>
   </header>
 
   <div class="max-w-md mx-auto p-4 space-y-4">
 
-    <!-- Card: สรุปยอดรวม -->
+    <!-- รายรับต่อเดือน -->
     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-      <h2 class="text-sm font-semibold text-slate-500 mb-3">ภาพรวมค่าใช้จ่ายทั้งหมด</h2>
-      <div class="grid grid-cols-3 gap-2 text-center">
-        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-          <p class="text-xs text-slate-500">ต่อวัน</p>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">💵 รายรับต่อเดือน (บาท)</label>
+      <input type="number" id="income" min="0" step="any" placeholder="เช่น 30000"
+        class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-lg font-bold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+    </div>
+
+    <!-- สรุปเงินคงเหลือ -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+      <h2 class="text-sm font-semibold text-slate-500 mb-3">สรุปประจำเดือน</h2>
+
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <span class="text-slate-500">รายรับ</span>
+          <span id="sumIncome" class="font-semibold text-emerald-600">0</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-500">รายจ่ายรวม</span>
+          <span id="sumExpense" class="font-semibold text-rose-600">0</span>
+        </div>
+        <div class="border-t border-slate-200 pt-2 flex justify-between items-center">
+          <span class="text-slate-700 font-medium">คงเหลือ</span>
+          <span id="sumLeft" class="text-xl font-bold text-slate-800">0</span>
+        </div>
+      </div>
+
+      <!-- แถบสัดส่วนที่ใช้ไป -->
+      <div class="mt-3">
+        <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+          <div id="usedBar" class="h-full bg-indigo-500 transition-all" style="width:0%"></div>
+        </div>
+        <p id="usedText" class="text-xs text-slate-400 mt-1.5">ใส่รายรับต่อเดือนเพื่อดูว่าเหลือใช้เท่าไหร่</p>
+      </div>
+
+      <!-- ต่อวัน / ต่อเดือน / เหลือใช้ต่อวัน -->
+      <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+          <p class="text-xs text-slate-500">จ่าย/วัน</p>
           <p id="totalDay" class="text-sm font-bold text-slate-800 mt-1">0</p>
         </div>
-        <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
-          <p class="text-xs text-indigo-600 font-medium">ต่อเดือน</p>
-          <p id="totalMonth" class="text-base font-bold text-indigo-600 mt-1">0</p>
+        <div class="bg-indigo-50 p-2.5 rounded-xl border border-indigo-100">
+          <p class="text-xs text-indigo-600 font-medium">จ่าย/เดือน</p>
+          <p id="totalMonth" class="text-sm font-bold text-indigo-600 mt-1">0</p>
         </div>
-        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-          <p class="text-xs text-slate-500">ต่อปี</p>
-          <p id="totalYear" class="text-sm font-bold text-slate-800 mt-1">0</p>
+        <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
+          <p class="text-xs text-emerald-700 font-medium">เหลือใช้/วัน</p>
+          <p id="leftPerDay" class="text-sm font-bold text-emerald-600 mt-1">0</p>
         </div>
       </div>
     </div>
 
-    <!-- Form: เพิ่มรายการ -->
+    <!-- เพิ่มรายการ -->
     <form id="expenseForm" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
       <h3 class="text-sm font-semibold text-slate-700">➕ เพิ่มรายการค่าใช้จ่าย</h3>
-      
+
+      <div>
+        <label class="block text-xs text-slate-500 mb-1.5">เลือกหมวด (กดเพื่อเติมชื่อรายการ)</label>
+        <div id="presetBtns" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
       <div>
         <label class="block text-xs text-slate-500 mb-1">ชื่อรายการ</label>
-        <input type="text" id="title" required placeholder="เช่น ค่าอาหาร, ค่าเน็ต, ค่าน้ำมัน"
+        <input type="text" id="title" required placeholder="เช่น ค่าอาหารหมา, ค่าน้ำมันรถ"
           class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
       </div>
 
       <div class="grid grid-cols-2 gap-2">
         <div>
           <label class="block text-xs text-slate-500 mb-1">จำนวนเงิน (บาท)</label>
-          <input type="number" id="amount" required min="1" step="any" placeholder="0.00"
+          <input type="number" id="amount" required min="0" step="any" placeholder="0.00"
             class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
         <div>
@@ -59,6 +97,7 @@
           <select id="frequency"
             class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="daily">ต่อวัน</option>
+            <option value="weekly">ต่อสัปดาห์</option>
             <option value="monthly" selected>ต่อเดือน</option>
             <option value="yearly">ต่อปี</option>
           </select>
@@ -71,99 +110,210 @@
       </button>
     </form>
 
-    <!-- List: รายการค่าใช้จ่าย -->
+    <!-- รายการทั้งหมด -->
     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
       <div class="flex justify-between items-center mb-3">
-        <h3 class="text-sm font-semibold text-slate-700">รายการทั้งหมด</h3>
+        <h3 class="text-sm font-semibold text-slate-700">
+          รายการทั้งหมด <span id="itemCount" class="text-xs font-normal text-slate-400"></span>
+        </h3>
         <button id="clearAll" class="text-xs text-red-500 hover:underline">ล้างทั้งหมด</button>
       </div>
-
-      <ul id="itemList" class="divide-y divide-slate-100 text-sm">
-        <!-- รายการจะถูกแทรกที่นี่ด้วย JS -->
-      </ul>
+      <ul id="itemList" class="divide-y divide-slate-100 text-sm"></ul>
     </div>
+
+    <p class="text-center text-xs text-slate-400 pt-2">
+      ข้อมูลถูกเก็บไว้ในเครื่องของคุณเท่านั้น (localStorage)
+    </p>
 
   </div>
 
   <script>
-    let expenses = JSON.parse(localStorage.getItem('family_expenses')) || [];
+    // ---------- หมวดค่าใช้จ่ายที่ใช้บ่อย ----------
+    const PRESETS = [
+      { label: '🐶 ค่าอาหารหมา',   title: 'ค่าอาหารหมา',    frequency: 'monthly' },
+      { label: '🍬 ค่าขนมกิ้ง',    title: 'ค่าขนมกิ้ง',     frequency: 'monthly' },
+      { label: '🍜 ค่ากินอ้วน',    title: 'ค่ากินอ้วน',     frequency: 'daily'   },
+      { label: '⛽ ค่าน้ำมันรถ',   title: 'ค่าน้ำมันรถ',    frequency: 'monthly' },
+      { label: '🧴 ค่าของใช้',     title: 'ค่าของใช้',      frequency: 'monthly' },
+      { label: '📄 อื่น ๆ',        title: '',               frequency: 'monthly' }
+    ];
 
-    const form = document.getElementById('expenseForm');
-    const itemList = document.getElementById('itemList');
+    // จำนวนวัน/สัปดาห์เฉลี่ยต่อเดือน
+    const DAYS_PER_MONTH  = 30.4375;
+    const WEEKS_PER_MONTH = 52 / 12;
 
-    function saveAndRender() {
-      localStorage.setItem('family_expenses', JSON.stringify(expenses));
+    const STORAGE_KEY = 'family_expenses';
+    const INCOME_KEY  = 'family_income';
+
+    let expenses = [];
+    try { expenses = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch (e) { expenses = []; }
+
+    const form        = document.getElementById('expenseForm');
+    const itemList    = document.getElementById('itemList');
+    const incomeInput = document.getElementById('income');
+    const titleInput  = document.getElementById('title');
+    const amountInput = document.getElementById('amount');
+    const freqSelect  = document.getElementById('frequency');
+
+    incomeInput.value = localStorage.getItem(INCOME_KEY) || '';
+
+    const FREQ_TEXT = { daily: 'วัน', weekly: 'สัปดาห์', monthly: 'เดือน', yearly: 'ปี' };
+
+    function baht(n) {
+      return Math.round(n).toLocaleString('th-TH');
+    }
+
+    // แปลงทุกรอบการจ่ายให้เป็นยอดต่อเดือน
+    function toMonthly(item) {
+      const amt = parseFloat(item.amount) || 0;
+      switch (item.frequency) {
+        case 'daily':  return amt * DAYS_PER_MONTH;
+        case 'weekly': return amt * WEEKS_PER_MONTH;
+        case 'yearly': return amt / 12;
+        default:       return amt;
+      }
+    }
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+      localStorage.setItem(INCOME_KEY, incomeInput.value);
       renderList();
-      calculateTotals();
+      renderTotals();
+    }
+
+    function renderPresets() {
+      const box = document.getElementById('presetBtns');
+      PRESETS.forEach(p => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = p.label;
+        btn.className = 'px-2.5 py-1.5 text-xs rounded-full border border-slate-300 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition';
+        btn.addEventListener('click', () => {
+          titleInput.value = p.title;
+          freqSelect.value = p.frequency;
+          amountInput.focus();
+        });
+        box.appendChild(btn);
+      });
     }
 
     function renderList() {
       itemList.innerHTML = '';
+      document.getElementById('itemCount').textContent =
+        expenses.length ? '(' + expenses.length + ' รายการ)' : '';
+
       if (expenses.length === 0) {
-        itemList.innerHTML = `<li class="py-4 text-center text-xs text-slate-400">ยังไม่มีรายการค่าใช้จ่าย</li>`;
+        itemList.innerHTML = '<li class="py-4 text-center text-xs text-slate-400">ยังไม่มีรายการค่าใช้จ่าย</li>';
         return;
       }
 
-      expenses.forEach((item, index) => {
-        const freqText = item.frequency === 'daily' ? 'วัน' : item.frequency === 'monthly' ? 'เดือน' : 'ปี';
-        const li = document.createElement('li');
-        li.className = 'py-3 flex justify-between items-center';
-        li.innerHTML = `
-          <div>
-            <p class="font-medium text-slate-800">${item.title}</p>
-            <p class="text-xs text-slate-400">${Number(item.amount).toLocaleString()} บาท / ${freqText}</p>
-          </div>
-          <button onclick="deleteItem(${index})" class="text-slate-300 hover:text-red-500 text-lg px-2">✕</button>
-        `;
-        itemList.appendChild(li);
+      const totalMonthly = expenses.reduce((s, i) => s + toMonthly(i), 0);
+
+      // เรียงจากรายการที่กินเงินมากที่สุด
+      expenses
+        .map((item, index) => ({ item: item, index: index, monthly: toMonthly(item) }))
+        .sort((a, b) => b.monthly - a.monthly)
+        .forEach(row => {
+          const item = row.item;
+          const pct  = totalMonthly > 0 ? (row.monthly / totalMonthly * 100) : 0;
+          const approx = item.frequency !== 'monthly'
+            ? '<span class="text-slate-300">·</span> ≈ ' + baht(row.monthly) + '/เดือน'
+            : '';
+          const li = document.createElement('li');
+          li.className = 'py-3';
+          li.innerHTML =
+            '<div class="flex justify-between items-start gap-2">' +
+              '<div class="min-w-0">' +
+                '<p class="font-medium text-slate-800 truncate">' + escapeHtml(item.title) + '</p>' +
+                '<p class="text-xs text-slate-400">' +
+                  baht(parseFloat(item.amount) || 0) + ' บาท / ' + (FREQ_TEXT[item.frequency] || 'เดือน') +
+                  ' ' + approx +
+                '</p>' +
+              '</div>' +
+              '<div class="flex items-center gap-2 shrink-0">' +
+                '<span class="text-xs text-slate-400">' + pct.toFixed(0) + '%</span>' +
+                '<button data-del="' + row.index + '" class="text-slate-300 hover:text-red-500 text-lg px-1">✕</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="mt-2 w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">' +
+              '<div class="h-full bg-indigo-400" style="width:' + pct + '%"></div>' +
+            '</div>';
+          itemList.appendChild(li);
+        });
+    }
+
+    function renderTotals() {
+      const income       = parseFloat(incomeInput.value) || 0;
+      const totalMonthly = expenses.reduce((s, i) => s + toMonthly(i), 0);
+      const left         = income - totalMonthly;
+
+      document.getElementById('sumIncome').textContent  = baht(income);
+      document.getElementById('sumExpense').textContent = baht(totalMonthly);
+      document.getElementById('totalDay').textContent   = baht(totalMonthly / DAYS_PER_MONTH);
+      document.getElementById('totalMonth').textContent = baht(totalMonthly);
+
+      const leftEl = document.getElementById('sumLeft');
+      leftEl.textContent = baht(left);
+      leftEl.className = 'text-xl font-bold ' + (left < 0 ? 'text-rose-600' : 'text-emerald-600');
+
+      const leftDayEl = document.getElementById('leftPerDay');
+      leftDayEl.textContent = baht(left / DAYS_PER_MONTH);
+      leftDayEl.className = 'text-sm font-bold mt-1 ' + (left < 0 ? 'text-rose-600' : 'text-emerald-600');
+
+      const pct = income > 0 ? (totalMonthly / income * 100) : 0;
+      const bar = document.getElementById('usedBar');
+      bar.style.width = Math.min(pct, 100) + '%';
+      bar.className = 'h-full transition-all ' +
+        (pct > 100 ? 'bg-rose-500' : pct > 80 ? 'bg-amber-500' : 'bg-indigo-500');
+
+      const usedText = document.getElementById('usedText');
+      if (income <= 0) {
+        usedText.textContent = 'ใส่รายรับต่อเดือนเพื่อดูว่าเหลือใช้เท่าไหร่';
+      } else if (pct > 100) {
+        usedText.textContent = 'ใช้เกินรายรับ ' + baht(totalMonthly - income) + ' บาท (' + pct.toFixed(0) + '%)';
+      } else {
+        usedText.textContent = 'ใช้ไป ' + pct.toFixed(0) + '% ของรายรับ · เหลือ ' + baht(left) + ' บาท';
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
       });
     }
 
-    function calculateTotals() {
-      let totalMonthly = 0;
-
-      expenses.forEach(item => {
-        const amt = parseFloat(item.amount);
-        if (item.frequency === 'daily') totalMonthly += amt * 30;
-        else if (item.frequency === 'monthly') totalMonthly += amt;
-        else if (item.frequency === 'yearly') totalMonthly += amt / 12;
-      });
-
-      const totalDaily = totalMonthly / 30;
-      const totalYearly = totalMonthly * 12;
-
-      document.getElementById('totalDay').innerText = Math.round(totalDaily).toLocaleString();
-      document.getElementById('totalMonth').innerText = Math.round(totalMonthly).toLocaleString();
-      document.getElementById('totalYear').innerText = Math.round(totalYearly).toLocaleString();
-    }
-
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', function (e) {
       e.preventDefault();
-      const title = document.getElementById('title').value;
-      const amount = document.getElementById('amount').value;
-      const frequency = document.getElementById('frequency').value;
-
-      expenses.push({ title, amount, frequency });
-      saveAndRender();
-
+      expenses.push({
+        title: titleInput.value.trim(),
+        amount: amountInput.value,
+        frequency: freqSelect.value
+      });
+      save();
       form.reset();
+      freqSelect.value = 'monthly';
+      titleInput.focus();
     });
 
-    function deleteItem(index) {
-      expenses.splice(index, 1);
-      saveAndRender();
-    }
+    itemList.addEventListener('click', function (e) {
+      const btn = e.target.closest('[data-del]');
+      if (!btn) return;
+      expenses.splice(Number(btn.dataset.del), 1);
+      save();
+    });
 
-    document.getElementById('clearAll').addEventListener('click', () => {
+    incomeInput.addEventListener('input', save);
+
+    document.getElementById('clearAll').addEventListener('click', function () {
       if (expenses.length > 0 && confirm('ต้องการลบรายการทั้งหมดหรือไม่?')) {
         expenses = [];
-        saveAndRender();
+        save();
       }
     });
 
-    // Initial Render
+    renderPresets();
     renderList();
-    calculateTotals();
+    renderTotals();
   </script>
 </body>
 </html>
